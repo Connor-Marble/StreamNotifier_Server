@@ -1,19 +1,21 @@
+import logging
+
 from flask import Flask, request
 from flask.ext.sqlalchemy import SQLAlchemy
 
-import logging
 import threading
 
 from models import *
 from dispatcher import Dispatcher
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s.%(msecs)d %(levelname)s %(module)s - %(funcName)s: %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
 
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://connor:postgresytrewq@localhost/Stream_Notifier"
 
 dispatcher = Dispatcher(SQLAlchemy(app), app)
-
-logging.basicConfig(level=logging.INFO)
 
 @app.route('/', methods=['POST'])
 def recieve_update():

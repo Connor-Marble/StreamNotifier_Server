@@ -5,20 +5,22 @@ import urllib.request
 import json
 from time import sleep
 
-def rate_limit_check(channel_names, names_per_req, req_delay):
+import config
+
+def rate_limit_check(channel_names):
 
     start_index = 0
 
     twitch_data = {}
-    for i in range(names_per_req, len(channel_names), names_per_req):
+    for i in range(config.REQUEST_LENGTH, len(channel_names), config.REQUEST_LENGTH):
         twitch_data.update(check_live(channel_names[start_index:i]))
         start_index = i
 
-        sleep(req_delay)
+        sleep(config.REQUEST_DELAY)
 
     twitch_data.update(check_live(channel_names[start_index:]))
 
-    sleep(req_delay)
+    sleep(config.REQUEST_DELAY)
     return twitch_data
 
 def check_live(channel_names):

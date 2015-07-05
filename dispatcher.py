@@ -1,12 +1,16 @@
 import re
-from queue import Queue
+import json
 import logging
-from time import sleep
+
+from queue import Queue
+from time import sleep, time
 
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import FlushError
 
 from models import *
 from twitch_check import rate_limit_check
+from config import *
 
 class Dispatcher():
 
@@ -19,9 +23,19 @@ class Dispatcher():
         self.running = True
 
         while self.running:
+            logging.info('Beginning update cycle')
+            
+            cycle_start = time()
+            
             self.process_user_post()
             self.update_channel_status()
             self.notify_users()
+
+            extra_time = CYCLE_TIME-(time()-cycle_start)
+
+            if extra_time > 0:
+                logging.info('waiting %s seconds before next refresh' % int(extra_time))
+                sleep(extra_time)
 
     def process_user_post(self):
         
@@ -30,14 +44,14 @@ class Dispatcher():
             data['Channels'] = self.sanitize_channels(data['Channels'])
             self.db_manager.add_channels(data['Channels'])
             
-            user_id = db_manager.add_user(data['regID'])
+            user_id = self.db_manager.add_user(data['regID'])
             
             self.db_manager.add_subs(user_id, data['Channels'])
 
         logging.info('all post data processed')
 
     def sanitize_channels(self, channels):
-        return [re.sub('[!@#$%^&*(){}[];\':"?<>,.=-+]','',name) for name in channels]
+        return ["".join(re.findall("[a-zA-Z0-9_]", name)) for name in channels]
         
     def update_channel_status(self):
         logging.info('updating channel status')
@@ -46,7 +60,8 @@ class Dispatcher():
             channels = self.db_manager.get_all_channels()
 
         db_status = {channel.name:channel.status for channel in channels}
-        twitch_status = rate_limit_check(list(db_status.keys()), 5, 1)
+        server_status = rate_limit_check(list(db_status.keys()))
+        logging.info (server_status)
 
     def notify_users(self):
         logging.info('notifying users of channel status')
@@ -67,11 +82,15 @@ class DatabaseManager():
                 logging.info('added new channel ' + i + ' to database')
         
             except IntegrityError as ex:
-                logging.info('failed to insert new channel: ' +
+                logging.warning('failed to insert new channel: ' +
                              i + ' because it already exists.')
                 self.db.session.rollback()
 
-                
+            except FlushError as ex:
+                logging.warning('failed to insert channel: ' + i + 'due to flush error')
+
+                self.db.session.rollback()
+            
     def add_user(self, regid):
         user = User.query.filter_by(reg_id=regid).first()
 
