@@ -1,9 +1,11 @@
 import re
 import json
+import http.client
 import logging
 
 from queue import Queue
 from time import sleep, time
+from requests import post
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import FlushError
@@ -15,9 +17,10 @@ from config import *
 class Dispatcher():
 
     def __init__(self, db, app):
-        self.db_manager=DatabaseManager(db)
+        self.db_manager=DatabaseManager(db, app)
         self.app = app
         self.post_data_queue = Queue()
+        self.newly_online_channels = []
 
     def run(self):
         self.running = True
@@ -56,25 +59,67 @@ class Dispatcher():
     def update_channel_status(self):
         logging.info('updating channel status')
 
-        with self.app.app_context():
-            channels = self.db_manager.get_all_channels()
+        channels = self.db_manager.get_all_channels()
 
-        db_status = {channel.name:channel.status for channel in channels}
+        db_status = {channel.name.lower():channel.status for channel in channels}
         server_status = rate_limit_check(list(db_status.keys()))
-        logging.info (server_status)
+
+        new_online = []
+        new_offline = []
+        
+        for channel_name in db_status.keys():
+            if db_status[channel_name]<server_status[channel_name]:
+                new_online.append(channel_name)
+                self.newly_online_channels.append(channel_name)
+                
+            elif db_status[channel_name]>server_status[channel_name]:
+                new_offline.append(channel_name)
+
+
+        logging.info('{} channels just came online'.format(len(new_online)))
+        logging.info(('{} channels just went offline').format(len(new_offline)))
+
+        logging.info(self.newly_online_channels)
+        
+        self.db_manager.update_channels_status(new_offline, 0)
+        self.db_manager.update_channels_status(new_online, 1)
 
     def notify_users(self):
-        logging.info('notifying users of channel status')
 
+        users = self.db_manager.get_subbed_users(self.newly_online_channels)
+        
+
+        
+        if len(users) is 0:
+            logging.info('no users need to be notified')
+            return
+
+        logging.info('notifying users of channel status')
+        reg_ids = []
+        for user in users:
+            logging.info(('notifying user {user.user_id} of status').format(user=user))
+            reg_ids.append(user.reg_id)
+
+        data = {'registration_ids':reg_ids, 'data':{'channels':self.newly_online_channels}}
+        
+        content = json.dumps(data)
+        headers ={"Content-type":"application/json", "Authorization":"key="+API_KEY}
+
+        response = post(url='https://android.googleapis.com/gcm/send', data=content, headers=headers)
+        logging.info(response.text)
+
+        self.newly_online_channels = []
+        
 
 class DatabaseManager():
 
-    def __init__(self, db):
+    def __init__(self, db, app):
         self.db = db
+        self.app = app
 
     def add_channels(self, channels):
         for i in channels:
-
+            logging.info('processing {}'.format(i))
             channel = Channel(name=i, status=0)
             try:
                 self.db.session.add(channel)
@@ -111,4 +156,37 @@ class DatabaseManager():
             self.db.session.commit()
 
     def get_all_channels(self):
-        return Channel.query.filter_by(status=0)        
+        with self.app.app_context():
+            return Channel.query.all()
+
+    def update_channels_status(self, channels, status):
+        with self.app.app_context():
+            for channel_name in channels:
+                channel = Channel.query.filter_by(name=channel_name).first()
+
+                if channel is not None :
+                    
+                    channel.status = status
+                    db.session.merge(channel)
+                    
+                    logging.info("changing status of {0} to {1}"
+                                 .format(channel_name, status))
+                    try:
+                        self.db.session.commit()
+                    except:
+                        logging.info("problem updating status of []".format(channel_name))
+                        self.db.session.rollback()
+
+    def get_subbed_users(self, channels):
+        users = set()
+        queries=[]
+        with self.app.app_context():
+            for ch_name in channels:
+                queries.append(Subscription.query.filter_by(channel_name=ch_name).all())
+
+            subscriptions = [sub for result in queries for sub in result]
+            for sub in subscriptions:
+                users.add(User.query.filter_by(user_id=sub.user_num).first())
+
+        return users
+                
