@@ -100,7 +100,7 @@ class Dispatcher():
             logging.info(('notifying user {user.user_id} of status').format(user=user))
             reg_ids.append(user.reg_id)
 
-        data = {'registration_ids':reg_ids, 'data':{'channels':self.newly_online_channels}}
+        data = {'registration_ids':reg_ids}
         
         content = json.dumps(data)
         headers ={"Content-type":"application/json", "Authorization":"key="+API_KEY}
@@ -160,22 +160,25 @@ class DatabaseManager():
             return Channel.query.all()
 
     def update_channels_status(self, channels, status):
-        with self.app.app_context():
-            for channel_name in channels:
-                channel = Channel.query.filter_by(name=channel_name).first()
 
-                if channel is not None :
-                    
-                    channel.status = status
-                    db.session.merge(channel)
-                    
-                    logging.info("changing status of {0} to {1}"
-                                 .format(channel_name, status))
-                    try:
-                        self.db.session.commit()
-                    except:
-                        logging.info("problem updating status of []".format(channel_name))
-                        self.db.session.rollback()
+        for channel_name in channels:
+            channel = Channel.query.filter_by(name=channel_name).first()
+            
+            if channel is not None :
+
+                new_channel = Channel(name=channel_name, status=status)
+                db.session.delete(channel)
+                db.session.add(new_channel)
+                
+                logging.info("changing status of {0} to {1}"
+                             .format(channel_name, status))
+                try:
+                    self.db.session.commit()
+                except:
+                    logging.info("problem updating status of []".format(channel_name))
+                    self.db.session.rollback()
+
+        self.db.session.commit()
 
     def get_subbed_users(self, channels):
         users = set()
