@@ -1,25 +1,26 @@
-from flask.ext.sqlalchemy import SQLAlchemy
-db = SQLAlchemy()
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, Text, SmallInteger, ForeignKey
+from sqlalchemy.orm import relationship, backref
 
-class User(db.Model):
-    __tablename__ = 'user'
-    user_id = db.Column('user_id' ,db.Integer, primary_key=True)
-    reg_id = db.Column(db.Text, unique=True)
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = 'users'
+    user_id = Column('user_id' ,Integer, primary_key=True)
+    reg_id = Column(Text, unique=True)
     
-    def __init__(self, reg_id):
-        self.reg_id = reg_id
 
-class Channel(db.Model):
+class Channel(Base):
     __tablename__ = 'channel'
-    name = db.Column(db.Text, primary_key=True)
-    status = db.Column(db.SmallInteger)
+    name = Column(Text, primary_key=True)
+    status = Column(SmallInteger)
 
 
-class Subscription(db.Model):
+class Subscription(Base):
     __tablename__ = 'subscription'
-    subscription_id = db.Column(db.Integer, primary_key = True)
-    user_num = db.Column(db.Integer, db.ForeignKey('user.user_id'))
-    channel_name = db.Column(db.Text, db.ForeignKey('channel.name'))
+    subscription_id = Column(Integer, primary_key = True)
+    user_num = Column(Integer, ForeignKey('users.user_id'))
+    channel_name = Column(Text, ForeignKey('channel.name'))
 
-    channel = db.relationship('Channel', foreign_keys=channel_name)
-    user = db.relationship('User', foreign_keys = user_num)
+    channel = relationship('Channel', foreign_keys=channel_name)
+    user = relationship('User', foreign_keys = user_num)
