@@ -37,7 +37,8 @@ def check_live(channel_names):
         for stream in streams:
             result[stream['channel']['name'].lower()] = 1
 
-            logging.info(result)
+            
+        logging.info(result)
         return result
 
     except:
