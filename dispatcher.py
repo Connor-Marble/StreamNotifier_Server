@@ -1,3 +1,7 @@
+"""
+Module to handle the main update loop of the application
+"""
+
 import re
 import json
 import http.client
@@ -15,7 +19,10 @@ from config import *
 from db_manager import DatabaseManager
 
 class Dispatcher():
-
+    """
+    Class is responsible for notifying users when
+    their subscribed channels going online
+    """
     def __init__(self, app):
         self.db_manager=DatabaseManager(app)
         self.app = app
@@ -23,8 +30,13 @@ class Dispatcher():
         self.newly_online_channels = []
 
     def run(self):
+        """
+        loops through duties of the dispatcher
+        for as long as the server is running
+        """
         self.running = True
 
+        last_clean=time()
         while self.running:
             logging.info('Beginning update cycle')
             
@@ -36,6 +48,10 @@ class Dispatcher():
 
             extra_time = CYCLE_TIME-(time()-cycle_start)
 
+            if (time()-last_clean)>CLEAN_PERIOD:
+                self.db_manager.clean()
+                last_clean=time()
+            
             if extra_time > 0:
                 logging.info('waiting %s seconds before next refresh' % int(extra_time))
                 sleep(extra_time)
@@ -110,3 +126,4 @@ class Dispatcher():
 
         self.newly_online_channels = []
         
+

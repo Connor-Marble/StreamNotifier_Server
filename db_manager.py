@@ -9,7 +9,9 @@ from models import *
 import logging
 
 class DatabaseManager():
-
+    """
+    responsible for performing all database access in the application
+    """
     def __init__(self, app):
         self.app = app
         engine = create_engine(
@@ -47,18 +49,28 @@ class DatabaseManager():
             
         return user.user_id
 
-    def add_subs(self, user_id, channels):
+    def add_subs(self, user_id, current_channels):
         existing_channels = [sub.channel_name for sub in self.session.query(Subscription).all()]
-        new_channels = [channel for channel in channels if channel not in existing_channels] 
-    
+        new_channels = [ch for ch in current_channels if ch not in existing_channels]
+        old_channels = [ch for ch in existing_channels if ch not in current_channels]
+
+        #add new channels user has subbed to
         for channel in new_channels:
             sub = Subscription(user_num=user_id, channel_name=channel)
             self.session.add(sub)
             self.session.commit()
 
+        #remove onld channels user has unsubbed from
+        for channel in old_channels:
+            sub = self.session.query(Subscription).filter_by(
+                user_num=user_id, channel_name=channel).first()
+            if sub is not None:
+                self.session.delete(sub)
+                self.session.commit()
+            
+            
     def get_all_channels(self):
-        with self.app.app_context():
-            return self.session.query(Channel).all()
+        return self.session.query(Channel).all()
 
     def update_channels_status(self, channels, status):
 
@@ -88,3 +100,36 @@ class DatabaseManager():
 
         return users
                 
+
+    def clean(self):
+        """
+        removes users with no subscriptions and 
+        channels with no subscribers
+        """
+        logging.info('cleaning db...')
+
+        non_subbed_users=[]
+        users=self.session.query(User).all()
+        for user in users:
+            sub = self.session.query(Subscription).filter_by(user_num=user.user_id).first()
+            if sub is None:
+                non_subbed_users.append(user)
+
+        unused_channels=[]
+        channels = self.session.query(Channel).all()
+        for channel in channels:
+            sub = self.session.query(Subscription).filter_by(channel_name=channel.name).first()
+
+            if sub is None:
+                unused_channels.append(channel)
+
+        logging.info('{0} channels and {1} users can be removed'\
+                     .format(len(unused_channels), len(non_subbed_users)))
+            
+        for channel in unused_channels:
+            self.session.delete(channel)
+            self.session.commit()
+
+        for user in non_subbed_users:
+            self.session.delete(user)
+            self.session.commit()
