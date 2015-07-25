@@ -26,18 +26,22 @@ def rate_limit_check(channel_names):
 def check_live(channel_names):
     baseurl = 'https://api.twitch.tv/kraken/streams?channel='
     url = baseurl + ','.join(channel_names)
-    print (url)
-    response = urllib.request.urlopen(url)
 
-    response_json = json.loads(response.read().decode('utf-8'))
-    streams = response_json['streams']
+    try:
+        response = urllib.request.urlopen(url)
 
-    result = {name.lower():0 for name in channel_names}
-    for stream in streams:
-        result[stream['channel']['name'].lower()] = 1
+        response_json = json.loads(response.read().decode('utf-8'))
+        streams = response_json['streams']
 
-    logging.info(result)
-    return result
+        result = {name.lower():0 for name in channel_names}
+        for stream in streams:
+            result[stream['channel']['name'].lower()] = 1
+
+            logging.info(result)
+        return result
+
+    except:
+        logging.error('unexpected error encountered: '+sys.exc_info()[0])
 
 
 

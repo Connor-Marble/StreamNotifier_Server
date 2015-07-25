@@ -41,17 +41,20 @@ class Dispatcher():
             logging.info('Beginning update cycle')
             
             cycle_start = time()
-            
-            self.process_user_post()
-            self.update_channel_status()
-            self.notify_users()
 
-            extra_time = CYCLE_TIME-(time()-cycle_start)
+            try:
+                self.process_user_post()
+                self.update_channel_status()
+                self.notify_users()
 
-            if (time()-last_clean)>CLEAN_PERIOD:
-                self.db_manager.clean()
-                last_clean=time()
-            
+                extra_time = CYCLE_TIME-(time()-cycle_start)
+
+                if (time()-last_clean)>CLEAN_PERIOD:
+                    self.db_manager.clean()
+                    last_clean=time()
+            except:
+                logging.error('Unexpected error encountered:' +sys.exc_info()[0])
+                
             if extra_time > 0:
                 logging.info('waiting %s seconds before next refresh' % int(extra_time))
                 sleep(extra_time)
