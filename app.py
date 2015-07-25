@@ -8,7 +8,9 @@ from models import *
 from dispatcher import Dispatcher
 
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s.%(msecs)d %(levelname)s %(module)s - %(funcName)s: %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
+                    format='%(asctime)s.%(msecs)d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                    filename='SN.log')
 
 
 app = Flask(__name__)

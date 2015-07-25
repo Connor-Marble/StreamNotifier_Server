@@ -15,8 +15,7 @@ class DatabaseManager():
     def __init__(self, app):
         self.app = app
         engine = create_engine(
-            'postgresql://connor:postgresytrewq@localhost/Stream_Notifier',
-            echo=True)
+            'postgresql://connor:postgresytrewq@localhost/Stream_Notifier')
         Session = sessionmaker(bind=engine)
         self.session = Session()
 
