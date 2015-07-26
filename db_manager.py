@@ -29,8 +29,6 @@ class DatabaseManager():
                 logging.info('added new channel ' + i + ' to database')
         
             except IntegrityError as ex:
-                logging.warning('failed to insert new channel: ' +
-                             i + ' because it already exists.')
                 self.session.rollback()
 
             except FlushError as ex:
