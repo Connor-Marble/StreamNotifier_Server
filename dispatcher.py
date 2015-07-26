@@ -6,6 +6,7 @@ import re
 import json
 import http.client
 import logging
+import sys
 
 from queue import Queue
 from time import sleep, time
@@ -73,7 +74,7 @@ class Dispatcher():
         logging.info('all post data processed')
 
     def sanitize_channels(self, channels):
-        return ["".join(re.findall("[a-zA-Z0-9_]", name)) for name in channels]
+        return ["".join(re.findall("[a-zA-Z0-9_]", name)).lower() for name in channels]
         
     def update_channel_status(self):
         logging.info('updating channel status')
