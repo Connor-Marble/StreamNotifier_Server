@@ -111,6 +111,7 @@ class Dispatcher():
         
         if len(users) is 0:
             logging.info('no users need to be notified')
+            self.newly_online_channels = []
             return
 
         logging.info('notifying users of channel status')
