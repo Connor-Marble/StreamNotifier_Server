@@ -7,6 +7,7 @@ import json
 import http.client
 import logging
 import sys
+import traceback
 
 from queue import Queue
 from time import sleep, time
@@ -53,23 +54,33 @@ class Dispatcher():
                 if (time()-last_clean)>CLEAN_PERIOD:
                     self.db_manager.clean()
                     last_clean=time()
-            except:
-                logging.error('Unexpected error encountered:' +sys.exc_info()[0])
+            except Exception as e:
+                logging.error('Unexpected error encountered:' + traceback.format_exc())
                 
             if extra_time > 0:
                 logging.info('waiting %s seconds before next refresh' % int(extra_time))
                 sleep(extra_time)
 
     def process_user_post(self):
-        
+
+        user_requests=[]
+        processed_users = []
+
         while not self.post_data_queue.empty():
-            data = json.loads(self.post_data_queue.get())
-            data['Channels'] = self.sanitize_channels(data['Channels'])
-            self.db_manager.add_channels(data['Channels'])
+            user_requests.append(self.post_data_queue.get())
+        
+        while len(user_requests)>0:
+            data = json.loads(user_requests.pop())
+
+            reg_id = data['regID']
+            if reg_id not in processed_users:
+                processed_users.append(reg_id)
+                data['Channels'] = self.sanitize_channels(data['Channels'])
+                self.db_manager.add_channels(data['Channels'])
             
-            user_id = self.db_manager.add_user(data['regID'])
+                user_id = self.db_manager.add_user(reg_id)
             
-            self.db_manager.add_subs(user_id, data['Channels'])
+                self.db_manager.add_subs(user_id, data['Channels'])
 
         logging.info('all post data processed')
 
