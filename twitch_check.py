@@ -42,7 +42,7 @@ def check_live(channel_names):
         return result
 
     except:
-        logging.error('unexpected error encountered: '+sys.exc_info()[0])
+        logging.error('unexpected error encountered: '+str(sys.exc_info()[0]))
 
 
 
