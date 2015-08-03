@@ -24,7 +24,11 @@ def rate_limit_check(channel_names):
     return twitch_data
 
 def check_live(channel_names):
-    baseurl = 'https://api.twitch.tv/kraken/streams?channel='
+    baseurl = config.API_CALL
+
+    if(config.TESTING):
+        baseurl = config.TESTING_CALL
+    
     url = baseurl + ','.join(channel_names)
 
     try:
