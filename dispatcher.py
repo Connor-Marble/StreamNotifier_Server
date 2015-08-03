@@ -43,6 +43,7 @@ class Dispatcher():
             logging.info('Beginning update cycle')
             
             cycle_start = time()
+            extra_time = 0
 
             try:
                 self.process_user_post()
@@ -93,7 +94,11 @@ class Dispatcher():
         channels = self.db_manager.get_all_channels()
 
         db_status = {channel.name.lower():channel.status for channel in channels}
-        server_status = rate_limit_check(list(db_status.keys()))
+        if len(db_status)==0:
+            server_status = rate_limit_check(list(db_status.keys()))
+
+        else:
+            logging.error('database failed to return any channels')
 
         new_online = []
         new_offline = []
