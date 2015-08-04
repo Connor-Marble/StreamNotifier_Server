@@ -1,11 +1,13 @@
 import logging
 
 from flask import Flask, request
+from flask.json import jsonify
 
 import threading
 
 from models import *
 from dispatcher import Dispatcher
+import config
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s.%(msecs)d %(levelname)s %(module)s - %(funcName)s: %(message)s',
@@ -23,6 +25,22 @@ def recieve_update():
     
     return ''
 
+
+@app.route('/api', methods=['GET'])
+def request_status():
+
+    if not config.TESTING:
+        return ''
+    
+    channels = request.args.get('channel').split(',')
+    streams = []
+    with open("./tests/online_dummy_streams") as file:
+        online = file.readlines()
+        for channel in channels:
+            if channel in online:
+                streams.append({"channel":{"name":channel}})
+
+    return jsonify(streams=streams)
 
 if __name__=='__main__':
     

@@ -14,6 +14,6 @@ API_KEY='AIzaSyCKMy2eoiFHIHqVWRR_cpUyXvIh_k5Xyg4'
 CLEAN_PERIOD=600
 
 API_CALL='https://api.twitch.tv/kraken/streams?channel=' 
-TESTING_CALL='http://104.131.94.147:5000/api?channel='
+TESTING_CALL='http://0.0.0.0:5000/api?channel='
 
 TESTING  =True
