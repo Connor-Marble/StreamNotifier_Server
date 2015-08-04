@@ -47,7 +47,8 @@ class DatabaseManager():
         return user.user_id
 
     def add_subs(self, user_id, current_channels):
-        existing_channels = [sub.channel_name for sub in self.session.query(Subscription).all()]
+        subbed_channel_query=self.session.query(Subscription).filter_by(user_num=user_id)
+        existing_channels = [sub.channel_name for sub in subbed_channel_query.all()]
         new_channels = [ch for ch in current_channels if ch not in existing_channels]
         old_channels = [ch for ch in existing_channels if ch not in current_channels]
 
