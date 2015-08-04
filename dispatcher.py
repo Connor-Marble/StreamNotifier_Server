@@ -94,11 +94,12 @@ class Dispatcher():
         channels = self.db_manager.get_all_channels()
 
         db_status = {channel.name.lower():channel.status for channel in channels}
-        if len(db_status)==0:
+        if len(db_status)>0:
             server_status = rate_limit_check(list(db_status.keys()))
 
         else:
             logging.error('database failed to return any channels')
+            server_status = []
 
         new_online = []
         new_offline = []
