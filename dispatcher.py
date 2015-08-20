@@ -103,15 +103,18 @@ class Dispatcher():
 
         new_online = []
         new_offline = []
-        
-        for channel_name in db_status.keys():
-            if db_status[channel_name]<server_status[channel_name]:
-                new_online.append(channel_name)
-                self.newly_online_channels.append(channel_name)
-                
-            elif db_status[channel_name]>server_status[channel_name]:
-                new_offline.append(channel_name)
 
+        try:
+            for channel_name in db_status.keys():
+                if db_status[channel_name]<server_status[channel_name]:
+                    new_online.append(channel_name)
+                    self.newly_online_channels.append(channel_name)
+                
+                elif db_status[channel_name]>server_status[channel_name]:
+                    new_offline.append(channel_name)
+
+        except ValueError:
+            logging.error("could not retrieve channel status from api")
 
         logging.info('{} channels just came online'.format(len(new_online)))
         logging.info(('{} channels just went offline').format(len(new_offline)))
@@ -145,7 +148,12 @@ class Dispatcher():
 
         response = post(url='https://android.googleapis.com/gcm/send', data=content, headers=headers)
         logging.info(response.text)
+        self.remove_old_users(json.loads(response.text), reg_ids)
 
         self.newly_online_channels = []
-        
 
+    def remove_old_users(self, json_response, reg_ids):
+        for i, result in enumerate(json_response['results']):
+            if ('registration_id' in result) or ('error' in result):
+                self.db_manager.remove_user_sub(reg_ids[i])
+            

@@ -131,3 +131,14 @@ class DatabaseManager():
         for user in non_subbed_users:
             self.session.delete(user)
             self.session.commit()
+
+    def remove_user_sub(self, reg_id):
+        """remove all subs associated with the given user id. This
+        will cause the user to be removed upon next cleaning pass"""
+        logging.info("removing subs for user with id: {}".format(reg_id))
+        user = self.session.query(User).filter_by(reg_id=reg_id).first()
+        subs = self.session.query(Subscription).filter_by(user_num=user.user_id).all()
+
+        for sub in subs:
+            self.session.delete(sub)
+            self.session.commit()
