@@ -14,10 +14,10 @@ logging.basicConfig(level=logging.INFO,
                     datefmt="%Y-%m-%d %H:%M:%S",
                     filename='SN.log')
 
-
 app = Flask(__name__)
-
 dispatcher = Dispatcher(app)
+dispatch_thread = threading.Thread(target=dispatcher.run, args=[])
+dispatch_thread.start()
 
 @app.route('/', methods=['POST'])
 def recieve_update():
@@ -42,9 +42,5 @@ def request_status():
 
     return jsonify(streams=streams)
 
-if __name__=='__main__':
-    
-    dispatch_thread = threading.Thread(target=dispatcher.run, args=[])
-    dispatch_thread.start()
-    app.run(host='0.0.0.0')    
+
     
