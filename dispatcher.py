@@ -27,7 +27,6 @@ class Dispatcher():
     """
     def __init__(self, app):
         self.db_manager=DatabaseManager(app)
-        self.app = app
         self.post_data_queue = Queue()
         self.newly_online_channels = []
 
