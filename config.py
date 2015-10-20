@@ -8,12 +8,17 @@ REQUEST_DELAY=0
 #databse with new client requests and twitch status
 CYCLE_TIME=60
 
-API_KEY='AIzaSyCKMy2eoiFHIHqVWRR_cpUyXvIh_k5Xyg4'
+#GCM API Key
+API_KEY='xxxxxxxxxxxxxxxxxxxxxxxx_xxxxxxxx_xxxxxx'
 
 #Time in seconds between database cleans
 CLEAN_PERIOD=600
 
-API_CALL='https://api.twitch.tv/kraken/streams?channel=' 
+#Base for querying channel status from twitch api
+API_CALL='https://api.twitch.tv/kraken/streams?channel='
+
+#Base for querying channel from test server designed to mimick twitch api
 TESTING_CALL='http://0.0.0.0:5000/api?channel='
 
-TESTING  =True
+#will get information from test server when true
+TESTING  =False
